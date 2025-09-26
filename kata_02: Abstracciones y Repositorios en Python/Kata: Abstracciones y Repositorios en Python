@@ -1,0 +1,111 @@
+Perfecto, Marcos 🚀. Basándome en lo que hemos trabajado en este chat (Capítulo 2 y 3 de *Cosmic Python*, abstracciones, repositorios concretos y fakes, inversión de dependencias, TDD y dominio limpio), aquí te dejo un **ejercicio estilo kata** para practicar:
+
+---
+
+# 🥋 Kata: Abstracciones y Repositorios en Python
+
+## Contexto
+
+Este ejercicio surge del **Capítulo 3 de *Cosmic Python***, donde aprendimos que el **dominio no debe depender de implementaciones concretas** como una base de datos. En su lugar, usamos **abstracciones** (interfaces) y luego implementamos repositorios concretos (SQLAlchemy, Fake, etc.).
+La idea es ejercitar el **principio de inversión de dependencias** creando un dominio puro que pueda funcionar con diferentes repositorios.
+
+---
+
+## Instrucciones
+
+1. Define una clase abstracta `AbstractRepository` con los métodos necesarios para manejar `Batch` (del capítulo 1).
+2. Implementa un repositorio en memoria (`FakeRepository`) que cumpla con la interfaz.
+3. Escribe pruebas unitarias que usen `FakeRepository` para verificar el comportamiento de la función de dominio `allocate()`.
+4. Implementa un repositorio que simule persistencia en una “base de datos” muy básica (puede ser solo un diccionario interno).
+5. Refactoriza tus tests para que el **dominio no dependa del tipo de repositorio**: deberían correr igual con Fake o con “DBRepo”.
+
+---
+
+## Restricciones
+
+* Trabaja con **TDD**: primero los tests, luego el código.
+* No uses librerías externas (solo `abc` y `pytest/unittest`).
+* No mezcles lógica de dominio con la lógica de persistencia.
+
+---
+
+## Nivel
+
+**Intermedio**: ya exige comprender abstracciones, repositorios y pruebas aisladas del dominio.
+
+---
+
+## Lenguaje
+
+Python 🐍 (puedes extender luego a JavaScript si quieres).
+
+---
+
+## Ejemplo inicial
+
+### `model.py` (dominio simplificado)
+
+```python
+from dataclasses import dataclass
+from typing import Optional
+
+@dataclass(frozen=True)
+class OrderLine:
+    orderid: str
+    sku: str
+    qty: int
+
+@dataclass
+class Batch:
+    reference: str
+    sku: str
+    purchased_quantity: int
+    allocations: set = None
+
+    def __post_init__(self):
+        if self.allocations is None:
+            self.allocations = set()
+
+    def allocate(self, line: OrderLine) -> bool:
+        if self.can_allocate(line):
+            self.allocations.add(line)
+            return True
+        return False
+
+    def can_allocate(self, line: OrderLine) -> bool:
+        return self.sku == line.sku and self.available_quantity >= line.qty
+
+    @property
+    def available_quantity(self) -> int:
+        return self.purchased_quantity - sum(line.qty for line in self.allocations)
+```
+
+### `test_repository.py` (punto de partida vacío)
+
+```python
+def test_allocate_uses_repository():
+    # TODO: implementar
+    pass
+```
+
+---
+
+## Criterio de éxito
+
+El programador habrá resuelto bien el kata si:
+
+* Todos los tests pasan con **FakeRepository** y con el repositorio simulado de “base de datos”.
+* El código del dominio (`Batch`, `allocate`) **no conoce ni importa** nada sobre repositorios.
+* El diseño queda limpio, aplicando el principio de inversión de dependencias.
+
+---
+
+## Versión extendida (opcional)
+
+* Implementa un `SqlAlchemyRepository` real usando SQLite en memoria.
+* Haz que tu test de dominio pueda ejecutarse indistintamente con **Fake**, **DBRepo** o **SqlAlchemyRepo**.
+* Introduce un “Service Layer” sencillo que use el repositorio para procesar órdenes.
+
+---
+
+👉 ¿Quieres que preparemos juntos el **esqueleto de `AbstractRepository` y un primer test en TDD** para que empieces a resolver el kata paso a paso?
